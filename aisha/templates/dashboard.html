@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f') no-repeat center center fixed;
+      background-size: cover;
+    }
+    form, textarea {
+      background: rgba(255, 255, 255, 0.95);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+      <div class="greeting">Welcome, {{ user }}!</div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="toggle-btn logout-btn">Logout</a>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+      {% for category, message in messages %}
+        <li class="flash {{ category }}">{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <h1>Certificate Dashboard</h1>
+  <form id="certificate_form" enctype="multipart/form-data">
+    <input type="text" id="matric_no" name="matric_no" placeholder="Matric No" required><br>
+    <input type="text" id="student_name" name="student_name" placeholder="Student Name" required><br>
+    <input type="text" id="department" name="department" placeholder="Department" required><br>
+    <input type="text" id="issuer" name="issuer" placeholder="Issuer" required><br>
+    <input type="file" id="certificate_file" name="certificate_file" required><br><br>
+    <button type="button" onclick="saveCertificate()">Save Certificate</button>
+    <button type="button" onclick="verifyCertificate()">Verify Certificate</button>
+    <button type="button" onclick="exportCertificatePDF()">Download Certificate PDF</button>
+  </form>
+
+  <textarea id="results_text" placeholder="Results will appear here..."></textarea>
+
+  <script>
+    async function saveCertificate() {
+      const form = document.getElementById("certificate_form");
+      const formData = new FormData(form);
+      const response = await fetch("/save_certificate", {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.text();
+      document.getElementById("results_text").value = result;
+    }
+
+    async function verifyCertificate() {
+      const formData = new FormData();
+      const fileInput = document.getElementById("certificate_file");
+      formData.append("certificate_file", fileInput.files[0]);
+      const response = await fetch("/verify_certificate", {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.text();
+      document.getElementById("results_text").value = result;
+    }
+
+    async function exportCertificatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const text = document.getElementById("results_text").value || "No certificate data found.";
+      const now = new Date();
+      const timestamp = now.toLocaleString();
+
+      doc.setFontSize(12);
+      doc.text(`Certificate Verification - ${timestamp}`, 10, 10);
+
+      const lines = doc.splitTextToSize(text, 180);
+      doc.text(lines, 10, 20);
+
+      doc.save("certificate_verification.pdf");
+    }
+  </script>
+</body>
+</html>

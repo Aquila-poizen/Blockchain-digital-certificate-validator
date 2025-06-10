@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain Certificate Validation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header>
+    <div class="left">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Logo_Universit%C3%A9_de_Paris.svg/2560px-Logo_Universit%C3%A9_de_Paris.svg.png" alt="Logo" class="logo">
+      <div class="greeting" id="greeting">Welcome, Guest</div>
+    </div>
+    <button class="toggle-btn" onclick="document.body.classList.toggle('dark-mode')">Toggle Dark Mode</button>
+  </header>
+
+  <h1>Blockchain Certificate Validation</h1>
+
+  <form id="login_form" onsubmit="setUser(event)">
+    <input type="text" id="username" name="username" placeholder="Enter your name to personalize..." required>
+    <button type="submit">Login</button>
+  </form>
+
+  <form id="certificate_form" enctype="multipart/form-data">
+    <input type="text" id="matric_no" name="matric_no" placeholder="Matric No" required><br>
+    <input type="text" id="student_name" name="student_name" placeholder="Student Name" required><br>
+    <input type="text" id="department" name="department" placeholder="Department" required><br>
+    <input type="text" id="issuer" name="issuer" placeholder="Issuer" required><br>
+    <input type="file" id="certificate_file" name="certificate_file" required><br><br>
+    <button type="button" onclick="saveCertificate()">Save Certificate</button>
+    <button type="button" onclick="verifyCertificate()">Verify Certificate</button>
+  </form>
+
+  <textarea id="results_text" placeholder="Results will appear here..."></textarea>
+
+  <script>
+    // Personalized greeting
+    function updateGreeting() {
+      const user = localStorage.getItem('user') || 'Guest';
+      document.getElementById('greeting').innerText = `Welcome, ${user}`;
+    }
+
+    function setUser(event) {
+      event.preventDefault();
+      const name = document.getElementById('username').value.trim();
+      if (name) {
+        localStorage.setItem('user', name);
+        updateGreeting();
+        document.getElementById('login_form').style.display = 'none';
+      }
+    }
+
+    window.onload = () => {
+      updateGreeting();
+      if (localStorage.getItem('user')) {
+        document.getElementById('login_form').style.display = 'none';
+      }
+    };
+
+    async function saveCertificate() {
+      const form = document.getElementById("certificate_form");
+      const formData = new FormData(form);
+      const response = await fetch("/save_certificate", {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.text();
+      document.getElementById("results_text").value = result;
+    }
+
+    async function verifyCertificate() {
+      const formData = new FormData();
+      const fileInput = document.getElementById("certificate_file");
+      formData.append("certificate_file", fileInput.files[0]);
+      const response = await fetch("/verify_certificate", {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.text();
+      document.getElementById("results_text").value = result;
+    }
+  </script>
+</body>
+</html>
